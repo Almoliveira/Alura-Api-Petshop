@@ -14,6 +14,7 @@ class Fornecedor {
 
 
     async criar () {
+        this.validar();
         const resultado = await TabelaFornecedor.inserir({
             empresa: this.empresa,
             email: this.email,
@@ -57,7 +58,27 @@ class Fornecedor {
 
         await TabelaFornecedor.atualizar(this.id, dadosParaAtualizar)
     }
+
+    remover() {
+        return TabelaFornecedor.remover(this.id);
+    };
+
+
+    validar() {
+        const campos = ['empresa', 'email', 'categoria'];
+
+        campos.forEach(campo => {
+            const valor = this[campo]
+
+            if(typeof valor != 'string' || valor.length === 0) {
+                throw new Error(`O cmapo ${campo} está invalido!`)
+            }
+        })
+    }
 };
+
+
+    
 
 
 module.exports = Fornecedor;
