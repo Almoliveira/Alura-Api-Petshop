@@ -1,13 +1,15 @@
 const roteador = require("express").Router();
 const TabelaFornecedor = require("./TabelaFornecedor");
 const Fornecedor = require("./Fornecedor");
-const { response } = require("express");
-const res = require("express/lib/response");
 const NaoEncontrado = require("../../erros/NaoEncontrado");
+const SerializadorFornecedor = require("../../Serializador").SerializadorFornecedor;
 
 roteador.get("/", async (req, res) => {
   const resultados = await TabelaFornecedor.listar();
-  res.send(JSON.stringify(resultados));
+  const serializador = new SerializadorFornecedor(
+    res.getHeader('Content-Type')
+  );
+  res.send(serializador.serializar(resultados));
 });
 
 roteador.post("/", async (requisicao, resposta, proximo) => {
@@ -15,7 +17,10 @@ roteador.post("/", async (requisicao, resposta, proximo) => {
     const dadosRecebidos = requisicao.body;
     const fornecedor = new Fornecedor(dadosRecebidos);
     await fornecedor.criar();
-    resposta.status(201).send(JSON.stringify(fornecedor));
+    const serializador = new SerializadorFornecedor(
+      res.getHeader('Content-Type')
+    );
+    resposta.status(201).send(serializador.serializar(fornecedor));
   } catch (er) {
     proximo(er);
   }
@@ -26,7 +31,10 @@ roteador.get("/:idFornecedor", async (req, res, proximo) => {
     const id = req.params.idFornecedor;
     const fornecedor = new Fornecedor({ id: id });
     await fornecedor.carregar();
-    res.status(200).send(JSON.stringify(fornecedor));
+    const serializador = new SerializadorFornecedor(
+      res.getHeader('Content-Type')
+    );
+    res.status(200).send(serializador.serializar(fornecedor));
   } catch (er) {
     proximo(er);
   }
@@ -41,17 +49,7 @@ roteador.put("/:idFornecedor", async (req, res) => {
     await fornecedor.atualizar();
     res.status(204).end();
   } catch (erro) {
-      if(erro instanceof NaoEncontrado) {
-        res.status(404)
-      } else {
-        res.status(400)
-      }
-    res.send(
-      JSON.stringify({
-        mensagem: erro.message,
-        id: erro.idErro
-      })
-    );
+    proximo(erro);
   }
 });
 
@@ -63,7 +61,7 @@ roteador.delete("/:idFornecedor", async (req, res, proximo) => {
     await fornecedor.remover();
     res.status(204).end();
   } catch (er) {
-    proximo(er)
+    proximo(er);
   }
 });
 
